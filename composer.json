@@ -1,0 +1,25 @@
+{
+    "name": "gabbro-php/base",
+    "version": "1.006331",
+    "license": "MIT",
+    "description": "Foundational collection of tools",
+    "type": "library",
+
+    "authors": [
+        {
+            "name": "Daniel Bergløv",
+            "email": "d.bergloev@cloudhome.dk"
+        }
+    ],
+
+    "require": {
+        "php": ">=8.0.0"
+    },
+
+    "autoload": {
+        "psr-4": {
+            "gabbro\\": "src/"
+        },
+        "files": ["bootstrap.php"]
+    }
+}
