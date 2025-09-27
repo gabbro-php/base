@@ -33,6 +33,27 @@ final class Shift {
      * @ignore
      */
     private function __construct() {}
+    
+    /**
+     * Converts an encoded string into a raw format. 
+     *
+     * This method will detect hex and base64 encodings and decode them
+     * into their raw values. Non-encoded values are simply returned as is.
+     *
+     * @param string $data      Data to decode.
+     *
+     * @return string           The decoded or original value.
+     */
+    public static function toRaw(string $data): string {
+        if (ctype_xdigit($data) && strlen($data) % 2 === 0) {
+            return hex2bin($data);
+            
+        } else if (($base64 = base64_decode($data, true)) !== false) {
+            return $base64;
+        }
+
+        return $data;
+    }
 
     /**
      * Convert a value to a proper string.
