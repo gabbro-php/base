@@ -20,6 +20,7 @@
  */
 namespace gabbro\utils;
 
+use DateTimeInterface;
 use Throwable;
 
 /**
@@ -89,6 +90,9 @@ final class Shift {
         
         } else if (is_int($data) || is_float($data)) {
             return (string) $data;
+            
+        } else if ($data instanceof DateTimeInterface) {
+            return $data->format(DateTimeInterface::RFC3339);
         
         } else if (is_array($data)) {
             return "Array";
@@ -136,6 +140,9 @@ final class Shift {
 
         } else if (is_int($data) || is_float($data)) {
             return $data;
+            
+        } else if ($data instanceof DateTimeInterface) {
+            return $data->getTimestamp();
 
         } else if (!is_string($data)) {
             $data = static::toString($data);
