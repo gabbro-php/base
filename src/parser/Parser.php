@@ -61,7 +61,7 @@ final class Parser {
      * @param string   $text
      *      The format string containing placeholders.
      *
-     * @param callable(string $type, int $target, int $index): string $callback
+     * @param callable(string $type, int $target, int $index): string $callable
      *      Callback that receives:
      *        - `$type`: the type identifier (`s`, `i`, `custom`, …).
      *        - `$target`: zero-based target index (from `%5s` → 4, `%s` → auto-increment).

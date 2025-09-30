@@ -49,7 +49,7 @@ final class Shift {
      */
     public static function toRaw(string $data): string {
         if (ctype_xdigit($data) && strlen($data) % 2 === 0) {
-            return hex2bin($data);
+            return hex2bin($data) ?: $data;
             
         } else if (($base64 = base64_decode($data, true)) !== false) {
             return $base64;
@@ -237,6 +237,9 @@ final class Shift {
     
     /**
      * @ignore
+     *
+     * @param Throwable $e
+     * @param list<string> $seen
      * 
      * @see https://www.php.net/manual/en/exception.gettraceasstring.php#114980
      */
@@ -252,7 +255,7 @@ final class Shift {
         while (true) {
             $current = "{$file}:{$line}";
             
-            if (is_array($seen) && in_array($current, $seen)) {
+            if (in_array($current, $seen)) {
                 $result[] = sprintf(" ... %d more", count($trace)+1);
                 break;
             }
@@ -260,15 +263,13 @@ final class Shift {
             $result[] = sprintf(" at %s%s%s(%s%s%s)",
                     count($trace) && array_key_exists("class", $trace[0]) ? str_replace("\\", ".", $trace[0]["class"]) : "",
                     count($trace) && array_key_exists("class", $trace[0]) && array_key_exists("function", $trace[0]) ? "." : "",
-                    count($trace) && array_key_exists("function", $trace[0]) ? str_replace("\\", '.', $trace[0]["function"]) : "(main)",
+                    count($trace)  ? str_replace("\\", '.', $trace[0]["function"]) : "(main)",
                     $line === null ? $file : basename($file),
                     $line === null ? "" : ":",
                     $line === null ? "" : $line
             );
                                         
-            if (is_array($seen)) {
-                $seen[] = "{$file}:{$line}";
-            }
+            $seen[] = "{$file}:{$line}";
                 
             if (!count($trace)) {
                 break;
