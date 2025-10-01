@@ -30,6 +30,28 @@ namespace gabbro\utils;
 class Text {
 
     /**
+     * Normalize a string by trimming indentation and optionally collapsing it.
+     *
+     * @param string $text       The raw string (possibly multiline).
+     * @param bool   $collapse   If true, all whitespace (spaces, tabs, newlines)
+     *                           will be collapsed into a single space.
+     *
+     * @return string 
+     */
+    public static function trimIndent(string $text, bool $collapse = false): string {
+        // First trim leading/trailing whitespace
+        $text = trim($text);
+
+        if ($collapse) {
+            // Collapse all whitespace into single spaces
+            return preg_replace('/\s+/', ' ', $text);
+        }
+
+        // Remove common indentation, but keep line breaks
+        return preg_replace('/^[ \t]+/m', '', $text);
+    }
+
+    /**
      * Calculate the length of a UTF-8 string in characters.
      *
      * Uses `mb_strlen()` if available; otherwise falls back
