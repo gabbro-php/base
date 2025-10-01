@@ -91,9 +91,23 @@ class IOStream extends RawStream {
      */
     public static function getInstance(int $fd = IOStream::STDOUT): IOStream {
         return match ($fd) {
-            IOStream::STDIN  => IOStream::$stdin  ??= new IOStream(STDIN, false, IOStream::STDIN),
-            IOStream::STDOUT => IOStream::$stdout ??= new IOStream(STDOUT, false, IOStream::STDOUT),
-            IOStream::STDERR => IOStream::$stderr ??= new IOStream(STDERR, false, IOStream::STDERR)
+            IOStream::STDIN  => IOStream::$stdin  ??= new IOStream(
+                defined("STDIN") ? STDIN : fopen("php://input", "r"),
+                false,
+                IOStream::STDIN
+            ),
+            
+            IOStream::STDOUT => IOStream::$stdout ??= new IOStream(
+                defined("STDOUT") ? STDOUT : fopen("php://output", "w"),
+                false,
+                IOStream::STDOUT
+            ),
+            
+            IOStream::STDERR => IOStream::$stderr ??= new IOStream(
+                defined("STDERR") ? STDERR : fopen("php://stderr", "w"),
+                false,
+                IOStream::STDERR
+            )
         };
     }
 
