@@ -181,8 +181,8 @@ abstract class BaseStream implements Stream {
         if ($data instanceof Stream && $data->getFlags(Stream::MODE_READABLE)) {
             $out = 0;
             
-            while (!$this->isEOF()) {
-                $bytes = $this->read(16384);
+            while (!$data->isEOF()) {
+                $bytes = $data->read(16384);
                 
                 if (($count = $this->write($bytes)) != strlen($bytes)) {
                     throw new IOException("Failed writing from a stream");
