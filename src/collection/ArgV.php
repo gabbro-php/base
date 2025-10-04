@@ -118,6 +118,16 @@ class ArgV implements Serializable, Cloneable {
     protected array $argList = [];
     
     /**
+     * @ignore
+     * @var list<array{
+     *      row: 1|0,
+     *      title: string|null,
+     *      text?: string|null
+     * }>
+     */
+    protected array $table = [];
+    
+    /**
      *
      *
      * @param list<string> $argv      Argv List
@@ -151,6 +161,96 @@ class ArgV implements Serializable, Cloneable {
         }
         
         $this->cmd = $cmd;
+    }
+    
+    /**
+     * Add a row to the internal table buffer.
+     *
+     * Rows have a title and optional text value, displayed in two columns
+     * when the table is rendered.
+     *
+     * @param string|null $title  Left column value (row label).
+     * @param string|null $text   Right column value (row content).
+     *
+     * @return void
+     */
+    public function addTableRow(string|null $title, string|null $text = null): void {
+        $this->table[] = [
+            "row" => 1,
+            "title" => $title,
+            "text" => $text
+        ];
+    }
+    
+    /**
+     * Add a headline to the internal table buffer.
+     *
+     * Headlines are single-column markers (e.g. section titles) that
+     * visually separate groups of rows when the table is rendered.
+     *
+     * @param string|null $headline  The headline text.
+     *
+     * @return void
+     */
+    public function addTableHeadline(string|null $headline): void {
+        $this->table[] = [
+            "row" => 0,
+            "title" => $headline
+        ];
+    }
+    
+    /**
+     * Build and render the table as a formatted string.
+     *
+     * Aligns row titles in a left-hand column and wraps long text values
+     * in the right-hand column based on console width. Headlines are
+     * displayed on their own line with blank spacing above them.
+     *
+     * @return string       The formatted table output, ready for console display.
+     */
+    public function buildTable(): string {
+        $lines = [];
+        $maxWith = 0;
+        
+        foreach ($this->table as $item) {
+            if ($item["row"]) {
+                $maxWith = max(strlen($item["title"] ?? ""), $maxWith);
+            }
+        }
+        
+        if ($maxWith) {
+            $maxWith += 4;
+            $wrapLen = Shell::getConsoleWidth();
+            
+            if ($wrapLen > 120) {
+                $wrapLen = (int) ($wrapLen * 0.8);
+            }
+            
+            foreach ($this->table as $item) {
+                if ($item["row"]) {
+                    $str = sprintf("  %-{$maxWith}s ", $item["title"] ?? "");
+                    
+                    if (!empty($item["text"])) {
+                        $str .= Text::wrapText($item["text"], $wrapLen - $maxWith, $maxWith + 3);
+                    }
+                    
+                    if (strpos($str, "\n") !== false) {
+                        $str .= "\n";
+                    }
+                    
+                    $lines[] = $str;
+                
+                } else {
+                    if (!empty($lines)) {
+                        $lines[] = "";
+                    }
+                
+                    $lines[] = $item["title"];
+                }
+            }
+        }
+        
+        return implode("\n", $lines)."\n";
     }
     
     /**
