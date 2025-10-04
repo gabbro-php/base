@@ -20,7 +20,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
  
-require "../SimpleLoader.php";
+require __DIR__ . "/../SimpleLoader.php";
 
 /**
  * Phar Archive Builder
