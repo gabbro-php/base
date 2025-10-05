@@ -163,13 +163,13 @@ if ($arg->help->isSet()) {
 
 $cfg = new stdClass();
 $cfg->name = $arg->name->getValue("app.phar");
-$cfg->output = $arg->name->getValue( $cfg->name );
+$cfg->output = $arg->output->getValue( $cfg->name );
 $cfg->source = $arg->source->getValue();
 $cfg->vendor = $arg->vendor->toArray();
 $cfg->stub = $arg->stub->getValue();
 $cfg->webstub = $arg->webstub->getValue();
 $cfg->header = $arg->header->getValue();
-$cfg->meta = $arg->header->getValue();
+$cfg->meta = $arg->meta->getValue();
 $cfg->bootstrap = $arg->bootstrap->getValue();
 $cfg->debug = $arg->debug->isSet();
 $cfg->rewrite = $arg->rewrite->isSet();
