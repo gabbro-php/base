@@ -52,6 +52,7 @@ use gabbro\collection\ArgV\Option;
 use gabbro\collection\ArgV\Flag;
 use gabbro\collection\ArgV\Operand;
 use gabbro\io\IOStream;
+use gabbro\utils\Text;
  
 $loader = SimpleLoader::getInstance();
 $loader->enableAutoload();
@@ -251,60 +252,68 @@ foreach ($scanDirs as $type => $dirs) {
 /* ==================================================
  * Create the stub file
  */
-
+ 
 if ($cfg->bootstrap === null) {
-$bootstrap = <<<EOF
-#!/usr/bin/env php
-<?php
-if (!in_array('phar', stream_get_wrappers()) || !class_exists('Phar', 0)) {
-     throw new Exception(sprintf("Failed to utilize phar://%s. Missing Phar extension!", __FILE__));
-}
-
-// Enable Phar file functions
-Phar::mapPhar("{$cfg->name}");
-
-if (is_file("phar://{$cfg->name}/header.php")) {
-    require "phar://{$cfg->name}/header.php";
-}
-
-if (PHP_SAPI === "cli" || PHP_SAPI === "phpdbg" || !is_file("phar://{$cfg->name}/index.php")) {
-    if (!is_file("phar://{$cfg->name}/default.php")) {
-        throw new Exception(sprintf("Failed to utilize phar://%s. Not supported by this archive!", __FILE__));
+    $bootstrap = Text::normalizeIndent("
+        #!/usr/bin/env php
+        <?php
+        if (!in_array(\"phar\", stream_get_wrappers()) || !class_exists(\"Phar\", false)) {
+            throw new Exception(\"Phar extension missing\");
+        }
+        
+        // Detect CLI or Web
+        \$isCli = (PHP_SAPI === \"cli\" || PHP_SAPI === \"phpdbg\");
+        
+        // These are statically included during build to provide a faster lookup of static states.
+        \$hasStub = ".($cfg->stub === null ? "false" : "true").";
+        \$hasWebStub = ".($cfg->webstub === null ? "false" : "true").";
+        \$hasHeader = ".($cfg->header === null ? "false" : "true").";
+        
+        // if (\$isCli || !\$hasWebStub) {
+        if (!\$hasWebStub) {
+            if (!\$hasStub) {
+                throw new Exception(\"Failed to initialize this archive. This is a pure archive and cannot be included or run as a web location.\");
+            }
+            
+            Phar::mapPhar(\"{$cfg->name}\");
+            
+            if (\$hasHeader) {
+                require \"phar://{$cfg->name}/header.php\";
+            }
+            
+            require \"phar://{$cfg->name}/default.php\";
+            
+            exit;
+        }
+        
+        Phar::mungServer([\"REQUEST_URI\", \"SCRIPT_NAME\", \"SCRIPT_FILENAME\"]);
+    ");
+    
+    if ($cfg->rewrite) {
+        $bootstrap .= Text::normalizeIndent("
+            Phar::webPhar(\"{$cfg->name}\", \"index.php\", null, [], function (string \$path): string {
+                // Route everything without an extension to index.php
+                if (\$path !== \"\" && !pathinfo(\$path, PATHINFO_EXTENSION)) {
+                    return \"index.php\";
+                }
+                return \$path;
+            });
+        ");
+        
+    } else {
+        $bootstrap .= Text::normalizeIndent("
+            Phar::webPhar(\"{$cfg->name}\", \"index.php\");
+        ");
     }
-
-    // CLI entry point
-    require "phar://{$cfg->name}/default.php";
-    exit;
-}
-
-Phar::mungServer(["REQUEST_URI", "SCRIPT_NAME", "SCRIPT_FILENAME"]);
-EOF;
-
-// Add webPhar with or without rewrite
-if ($cfg->rewrite) {
-
-$bootstrap .= <<<EOF
-Phar::webPhar("{$cfg->name}", "index.php", null, [], function (string \$path): string {
-    // Route everything without an extension to index.php
-    if (\$path !== "" && !pathinfo(\$path, PATHINFO_EXTENSION)) {
-        return "index.php";
-    }
-    return \$path;
-});
-EOF;
-
-} else {
-
-$bootstrap .= <<<EOF
-Phar::webPhar("{$cfg->name}", "index.php");
-EOF;
-
-}
-
-$bootstrap .= <<<EOF
-
-__HALT_COMPILER();
-EOF;
+    
+    $bootstrap .= Text::normalizeIndent("
+        if (\$hasHeader) {
+            require \"phar://{$cfg->name}/header.php\";
+        }
+        
+        __HALT_COMPILER();
+    ");
+    
 } else {
     $bootstrap = file_get_contents($cfg->bootstrap);
     
