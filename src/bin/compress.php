@@ -269,48 +269,69 @@ if ($cfg->bootstrap === null) {
         \$hasWebStub = ".($cfg->webstub === null ? "false" : "true").";
         \$hasHeader = ".($cfg->header === null ? "false" : "true").";
         
-        // if (\$isCli || !\$hasWebStub) {
-        if (!\$hasWebStub) {
+        if (\$isCli || !\$hasWebStub) {
             if (!\$hasStub) {
                 throw new Exception(\"Failed to initialize this archive. This is a pure archive and cannot be included or run as a web location.\");
             }
             
             Phar::mapPhar(\"{$cfg->name}\");
-            
+
             if (\$hasHeader) {
                 require \"phar://{$cfg->name}/header.php\";
             }
             
             require \"phar://{$cfg->name}/default.php\";
-            
             exit;
         }
+
+        \$inPhar = (bool) (Phar::running(false));
         
-        Phar::mungServer([\"REQUEST_URI\", \"SCRIPT_NAME\", \"SCRIPT_FILENAME\"]);
-    ");
-    
-    if ($cfg->rewrite) {
-        $bootstrap .= Text::normalizeIndent("
-            Phar::webPhar(\"{$cfg->name}\", \"index.php\", null, [], function (string \$path): string {
-                // Route everything without an extension to index.php
-                if (\$path !== \"\" && !pathinfo(\$path, PATHINFO_EXTENSION)) {
-                    return \"index.php\";
-                }
-                return \$path;
-            });
-        ");
+        Phar::interceptFileFuncs();
         
-    } else {
-        $bootstrap .= Text::normalizeIndent("
-            Phar::webPhar(\"{$cfg->name}\", \"index.php\");
-        ");
-    }
-    
-    $bootstrap .= Text::normalizeIndent("
+        if (\$inPhar) {
+            Phar::mungServer([\"REQUEST_URI\", \"SCRIPT_NAME\", \"SCRIPT_FILENAME\"]);
+        }
+        
+        Phar::mapPhar(\"{$cfg->name}\");
+        
         if (\$hasHeader) {
             require \"phar://{$cfg->name}/header.php\";
         }
         
+        \$path = parse_url(\$_SERVER[\"REQUEST_URI\"], PHP_URL_PATH);
+        \$path = trim(preg_replace(\"#^.*/" . preg_quote("{$cfg->output}", "#") . "/?#\", \"\", \$path), \"/\");
+
+        if (\$path === \"\" || \$path === \"index.php\") {
+            require \"phar://{$cfg->name}/index.php\";
+            exit;
+        }
+        
+        \$file = !empty(\$path) ? \"phar://ebudget.phar/{\$path}\" : null;
+    ");
+    
+    if ($cfg->rewrite) {
+        $bootstrap .= Text::normalizeIndent("
+            if (\$file !== null && file_exists(\$file)) {
+                require \$file;
+                
+            } else {
+                require \"phar://{$cfg->name}/index.php\";
+            }
+        ");
+        
+    } else {
+        $bootstrap .= Text::normalizeIndent("
+            if (\$file !== null && file_exists(\$file)) {
+                require \$file;
+                exit;
+            }
+            
+            http_response_code(404);
+        ");
+    }
+    
+    $bootstrap .= Text::normalizeIndent("
+        exit;
         __HALT_COMPILER();
     ");
     
