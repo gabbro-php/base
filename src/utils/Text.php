@@ -50,6 +50,57 @@ class Text {
         // Remove common indentation, but keep line breaks
         return preg_replace('/^[ \t]+/m', '', $text);
     }
+    
+    /**
+     * Normalize the indentation of a multi-line string.
+     *
+     * This method detects the smallest common indentation across all
+     * non-empty lines and removes that amount of leading whitespace
+     * (spaces or tabs) from each line. Empty lines are ignored when
+     * determining the minimal indentation level.
+     *
+     * Additionally, if the resulting text begins with an empty line
+     * after normalization, that line will be removed.
+     *
+     * This is useful for cleaning up indented heredoc or multi-line
+     * strings embedded in source code.
+     *
+     * @param string $text  The input text to normalize.
+     *
+     * @return string       The normalized string.
+     */
+    public static function normalizeIndent(string $text): string {
+        // Split into lines
+        $lines = preg_split("/\R/", $text);
+        if ($lines === false) return $text;
+
+        $minIndent = PHP_INT_MAX;
+
+        // Determine the smallest indentation across all non-empty lines
+        foreach ($lines as $line) {
+            if (trim($line) === "") continue;
+            if (preg_match("/^( +|\t+)/", $line, $m)) {
+                $minIndent = min($minIndent, strlen($m[0]));
+            } else {
+                $minIndent = 0;
+                break;
+            }
+        }
+
+        // Remove that indentation from each line
+        if ($minIndent > 0 && $minIndent !== PHP_INT_MAX) {
+            foreach ($lines as $pos => $line) {
+                $lines[$pos] = preg_replace("/^( {0,$minIndent}|\t{0,$minIndent})/", "", $line);
+            }
+        }
+        
+        // If the first line is empty after normalization, remove it
+        if (isset($lines[0]) && trim($lines[0]) === "") {
+            array_shift($lines);
+        }
+
+        return implode("\n", $lines);
+    }
 
     /**
      * Calculate the length of a UTF-8 string in characters.
@@ -95,7 +146,12 @@ class Text {
     public static function wrapText(string $text, int $maxLen, int $padding = 0): string {
         $maxLen = $maxLen - $padding;
         $wrapped = wordwrap($text, $maxLen, "\n");
-        $lines = explode("\n", $wrapped);
+        $lines = preg_split("/\R/", $wrapped);
+        
+        if ($lines === false) {
+            return $wrapped;
+        }
+        
         $padStr = "";
         
         foreach ($lines as &$line) {
