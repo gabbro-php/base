@@ -19,55 +19,25 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
+namespace gabbro\parser\ArgvParser;
 
-use gabbro\feature\Serializable;
-use gabbro\feature\Cloneable;
+use gabbro\collection\KeyTable;
 
 /**
- * Defines a basic argv argument.
+ * Defines a named argv argument.
  */
-interface Argument extends Serializable, Cloneable {
+interface NamedArgument extends Argument {
 
     /**
-     * Check to see if this argument was in the argv.
+     * Check to see if this argument has a specified name.
      *
-     * @param bool|null $state      Check if this is set or change the state by passing true|false.
+     * An argument can have multiple names. 
+     * Often this would be `-f` and `--flag` in such cases. 
      *
-     * @return bool                 Returns the current or new state
+     * @param string $name      The name to check for.
+     *
+     * @return bool
      */
-    function isSet(bool|null $state = null): bool;
-    
-    /**
-     * Get the title for this argument. 
-     *
-     * @return string
-     */
-    function getTitle(): string|null;
-    
-    /**
-     * Set a title for this argument.
-     *
-     * @param string $title      The title to set.
-     *
-     * @return void
-     */
-    function setTitle(string $title): void;
-    
-    /**
-     * Get the description for this argument.
-     *
-     * @return string|null      Returns NULL if no description has been set.
-     */
-    function getDescription(): string|null;
-    
-    /**
-     * Set a description for this argument.
-     *
-     * @param string $desc      The description to set.
-     *
-     * @return void
-     */
-    function setDescription(string $desc): void;
+    function hasName(string $name): bool;
 }
 

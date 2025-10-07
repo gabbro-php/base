@@ -19,7 +19,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
+namespace gabbro\parser\ArgvParser;
 
 /**
  * Defines an argv option.
@@ -37,7 +37,7 @@ class Option extends BaseArgument implements ValuedArgument, NamedArgument {
      * @ignore
      * @var string|null
      */
-    protected string|null $value;
+    protected string|null $value = null;
     
     /**
      * Create a new Option with description.

@@ -12,20 +12,11 @@ The goal is to bring **Java-style collections** into PHP with a modern, object-o
 - **Core collections**: lists, stacks, queues, sets, and maps.  
 - **Immutable and mutable variants** of arrays, key tables, and structured arrays.  
 - **Pairs** and **tables** for associative data handling.  
-- **CLI argument parsing** with `ArgV`, supporting options, flags, and operands.  
 - Iterators, type safety, and utility interfaces for consistency.  
 
 ---
 
 ## Library Structure
-
-### Argument Parsing (`ArgV`)
-- **`ArgV`** – Entry point for parsing command-line arguments.  
-- **`Argument`**, **`BaseArgument`** – Base types for CLI arguments.  
-- **`Option`** – Key/value option (`--name=value`).  
-- **`ArrayOption`** – Option that can appear multiple times (`--vendor[]=path`).  
-- **`Flag`** – Boolean flag (`--debug`, `-d`).  
-- **`Operand`** – Positional argument.  
 
 ### Core Collections
 - **`ArrayList`** – Ordered, resizable list.  
@@ -50,35 +41,6 @@ The goal is to bring **Java-style collections** into PHP with a modern, object-o
 ---
 
 ## Examples
-
-### 1. CLI Argument Parsing
-
-```php
-use gabbro\collection\ArgV;
-use gabbro\collection\ArgV\Flag;
-use gabbro\collection\ArgV\Option;
-use gabbro\collection\ArgV\Operand;
-
-$argvParser = new ArgV($argv);
-
-$argvParser->parseAll(
-    $help   = Flag::withDescription("Show help", "--help", "-h"),
-    $debug  = Flag::withDescription("Enable debug mode", "--debug", "-d"),
-    $name   = Option::withDescription("NAME", "Set application name", "--name"),
-    $source = Operand::withDescription("Source Directory", "Path to source files", 0)
-);
-
-if ($help->isSet()) {
-    echo $argvParser->buildHelp("Usage: app.php [options] <Source Directory>");
-    exit(0);
-}
-
-echo "Debug: " . ($debug->isSet() ? "on" : "off") . PHP_EOL;
-echo "Name: " . $name->getValue("default") . PHP_EOL;
-echo "Source: " . $source->getValue() . PHP_EOL;
-```
-
----
 
 ### 2. Using Lists and Stacks
 

@@ -19,7 +19,9 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
+namespace gabbro\parser\ArgvParser;
+
+use gabbro\util\Assert;
 
 /**
  * Defines an argv operand.
@@ -28,89 +30,98 @@ namespace gabbro\collection\ArgV;
  * belonging to an option. An operand is identified
  * only by it's position relative to other operands.
  */
-class Operand extends BaseArgument implements IndexedArgument, ValuedArgument {
+abstract class BaseArgument implements Argument {
+
+    /**
+     * @ignore
+     * @var bool
+     */
+    protected bool $isSet = false;
     
     /**
      * @ignore
      * @var string|null
      */
-    protected string|null $value;
+    protected string|null $title = null;
     
     /**
      * @ignore
-     * @var int<0,max>
+     * @var string|null
      */
-    protected int $position;
+    protected string|null $desc = null;
     
     /**
-     * Create a new Operand with description.
+     * {inheritdoc}
      *
-     * @param string $title             Title for this option.
-     * @param string $desc              Description for this option.
-     * @param int<0,max> $position      The position of the operand
-     *
-     * @return Operand
+     * @override {@see Argument::getTitle()}
      */
-    public static function withDescription(string $title, string $desc, int $position): Operand {
-        $obj = new Operand($position);
-        $obj->setDescription($desc);
-        $obj->setTitle($title);
+    public function getTitle(): string|null {
+        return $this->title;
+    }
+    
+    /**
+     * {inheritdoc}
+     *
+     * @override {@see Argument::getTitle()}
+     */
+    public function setTitle(string $title): void {
+        $this->title = $title;
+    }
+    
+    /**
+     * {inheritdoc}
+     *
+     * @override {@see Argument::getDescription()}
+     */
+    public function getDescription(): string|null {
+        return $this->desc;
+    }
+    
+    /**
+     * {inheritdoc}
+     *
+     * @override {@see Argument::setDesccription()}
+     */
+    public function setDescription(string $desc): void {
+        $this->desc = $desc;
+    }
+    
+    /**
+     * {inheritdoc}
+     *
+     * @override {@see Argument::isSet()}
+     */
+    public function isSet(bool|null $state = null): bool {
+        if ($state !== null) {
+            $this->isSet = $state;
+        }
         
-        return $obj;
-    }
-
-    /**
-     * Create a new Operand object.
-     *
-     * @param int<0,max> $position      The position of the operand
-     *
-     * @return void
-     */
-    public function __construct(int $position) {
-        $this->position = $position;
+        return $this->isSet;
     }
     
     /**
-     * {inheritdoc}
+     * {@inheritdoc}
      *
-     * @override {@see IndexedArgument::getPosition()}
+     * @override {@see Cloneable::clone()}
      */
-    public function getPosition(): int {
-        return $this->position;
-    }
-    
-    /**
-     * {inheritdoc}
-     *
-     * @override {@see ValuedArgument::addValue()}
-     */
-    public function addValue(string $value): void {
-        $this->value = $value;
-    }
-
-    /**
-     * {inheritdoc}
-     *
-     * @override {@see ValuedArgument::getValue()}
-     */
-    public function getValue(string|null $default = null): string|null {
-        return $this->value ?? $default;
+    function clone(): static {
+        return clone $this;
     }
     
     /* =================================================
      * Internal functions used by PHP
      */
-     
+    
     /**
      * @ignore
      * @override {@see Serializable::__serialize()}
      */
     public function __serialize(): array {
-        $arr = parent::__serialize();
-        $arr["value"] = $this->value;
-        $arr["position"] = $this->position;
-        
-        return $arr;
+        return [
+            "isSet" => $this->isSet,
+            "title" => $this->title,
+            "description" => $this->desc
+        ];
     }
     
     /**
@@ -120,10 +131,23 @@ class Operand extends BaseArgument implements IndexedArgument, ValuedArgument {
      * @override {@see Serializable::__unserialize()}
      */
     public function __unserialize(array $data): void {
-        parent::__unserialize($data);
-        
-        $this->position = is_int($data["position"]) && $data["position"] >= 0 ? $data["position"] : 0;
-        $this->value = is_string($data["value"]) ? $data["value"] : null;
+        $this->isSet = is_bool($data["isSet"]) ? $data["isSet"] : false;
+        $this->title = is_string($data["title"]) ? $data["title"] : null;
+        $this->desc  = is_string($data["description"]) ? $data["description"] : null;
     }
+    
+    /**
+     * @ignore
+     * @override {@see Serializable::__debugInfo()}
+     */
+    public function __debugInfo(): array {
+        return $this->__serialize();
+    }
+    
+    /**
+     * @ignore
+     * @override {@see Serializable::__debugInfo()}
+     */
+    public function __clone(): void {}
 }
 

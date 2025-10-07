@@ -19,18 +19,55 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
+namespace gabbro\parser\ArgvParser;
+
+use gabbro\feature\Serializable;
+use gabbro\feature\Cloneable;
 
 /**
- * Defines a positional argv argument.
+ * Defines a basic argv argument.
  */
-interface IndexedArgument extends Argument {
+interface Argument extends Serializable, Cloneable {
 
     /**
-     * Get the position of this argument.
+     * Check to see if this argument was in the argv.
      *
-     * @return int<0,max>
+     * @param bool|null $state      Check if this is set or change the state by passing true|false.
+     *
+     * @return bool                 Returns the current or new state
      */
-    function getPosition(): int;
+    function isSet(bool|null $state = null): bool;
+    
+    /**
+     * Get the title for this argument. 
+     *
+     * @return string
+     */
+    function getTitle(): string|null;
+    
+    /**
+     * Set a title for this argument.
+     *
+     * @param string $title      The title to set.
+     *
+     * @return void
+     */
+    function setTitle(string $title): void;
+    
+    /**
+     * Get the description for this argument.
+     *
+     * @return string|null      Returns NULL if no description has been set.
+     */
+    function getDescription(): string|null;
+    
+    /**
+     * Set a description for this argument.
+     *
+     * @param string $desc      The description to set.
+     *
+     * @return void
+     */
+    function setDescription(string $desc): void;
 }
 

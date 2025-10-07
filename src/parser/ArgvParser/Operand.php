@@ -19,9 +19,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
-
-use gabbro\util\Assert;
+namespace gabbro\parser\ArgvParser;
 
 /**
  * Defines an argv operand.
@@ -30,98 +28,89 @@ use gabbro\util\Assert;
  * belonging to an option. An operand is identified
  * only by it's position relative to other operands.
  */
-abstract class BaseArgument implements Argument {
+class Operand extends BaseArgument implements IndexedArgument, ValuedArgument {
+    
+    /**
+     * @ignore
+     * @var string|null
+     */
+    protected string|null $value = null;
+    
+    /**
+     * @ignore
+     * @var int
+     */
+    protected int $position = 0;
+    
+    /**
+     * Create a new Operand with description.
+     *
+     * @param string $title             Title for this option.
+     * @param string $desc              Description for this option.
+     * @param int $position             The position of the operand
+     *
+     * @return Operand
+     */
+    public static function withDescription(string $title, string $desc, int $position): Operand {
+        $obj = new Operand($position);
+        $obj->setDescription($desc);
+        $obj->setTitle($title);
+        
+        return $obj;
+    }
 
     /**
-     * @ignore
-     * @var bool
-     */
-    protected bool $isSet = false;
-    
-    /**
-     * @ignore
-     * @var string|null
-     */
-    protected string|null $title;
-    
-    /**
-     * @ignore
-     * @var string|null
-     */
-    protected string|null $desc;
-    
-    /**
-     * {inheritdoc}
+     * Create a new Operand object.
      *
-     * @override {@see Argument::getTitle()}
+     * @param int $position      The position of the operand
+     *
+     * @return void
      */
-    public function getTitle(): string|null {
-        return $this->title;
+    public function __construct(int $position) {
+        $this->position = $position;
     }
     
     /**
      * {inheritdoc}
      *
-     * @override {@see Argument::getTitle()}
+     * @override {@see IndexedArgument::getPosition()}
      */
-    public function setTitle(string $title): void {
-        $this->title = $title;
+    public function getPosition(): int {
+        return $this->position;
     }
     
     /**
      * {inheritdoc}
      *
-     * @override {@see Argument::getDescription()}
+     * @override {@see ValuedArgument::addValue()}
      */
-    public function getDescription(): string|null {
-        return $this->desc;
+    public function addValue(string $value): void {
+        $this->value = $value;
     }
-    
+
     /**
      * {inheritdoc}
      *
-     * @override {@see Argument::setDesccription()}
+     * @override {@see ValuedArgument::getValue()}
      */
-    public function setDescription(string $desc): void {
-        $this->desc = $desc;
-    }
-    
-    /**
-     * {inheritdoc}
-     *
-     * @override {@see Argument::isSet()}
-     */
-    public function isSet(bool|null $state = null): bool {
-        if ($state !== null) {
-            $this->isSet = $state;
-        }
-        
-        return $this->isSet;
-    }
-    
-    /**
-     * {@inheritdoc}
-     *
-     * @override {@see Cloneable::clone()}
-     */
-    function clone(): static {
-        return clone $this;
+    public function getValue(string|null $default = null): string|null {
+        return $this->value ?? $default;
     }
     
     /* =================================================
      * Internal functions used by PHP
      */
-    
+     
     /**
      * @ignore
      * @override {@see Serializable::__serialize()}
      */
     public function __serialize(): array {
-        return [
-            "isSet" => $this->isSet,
-            "title" => $this->title,
-            "description" => $this->desc
-        ];
+        $arr = parent::__serialize();
+        $arr["value"] = $this->value;
+        $arr["position"] = $this->position;
+        
+        return $arr;
     }
     
     /**
@@ -131,23 +120,10 @@ abstract class BaseArgument implements Argument {
      * @override {@see Serializable::__unserialize()}
      */
     public function __unserialize(array $data): void {
-        $this->isSet = is_bool($data["isSet"]) ? $data["isSet"] : false;
-        $this->title = is_string($data["title"]) ? $data["title"] : null;
-        $this->desc  = is_string($data["description"]) ? $data["description"] : null;
+        parent::__unserialize($data);
+        
+        $this->position = is_int($data["position"]) && $data["position"] >= 0 ? $data["position"] : 0;
+        $this->value = is_string($data["value"]) ? $data["value"] : null;
     }
-    
-    /**
-     * @ignore
-     * @override {@see Serializable::__debugInfo()}
-     */
-    public function __debugInfo(): array {
-        return $this->__serialize();
-    }
-    
-    /**
-     * @ignore
-     * @override {@see Serializable::__debugInfo()}
-     */
-    public function __clone(): void {}
 }
 

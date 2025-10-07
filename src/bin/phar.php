@@ -46,12 +46,11 @@ require __DIR__ . "/../SimpleLoader.php";
  */
 
 use gabbro\SimpleLoader;
-use gabbro\collection\ArrayList;
-use gabbro\collection\ArgV;
-use gabbro\collection\ArgV\ArrayOption;
-use gabbro\collection\ArgV\Option;
-use gabbro\collection\ArgV\Flag;
-use gabbro\collection\ArgV\Operand;
+use gabbro\parser\ArgvParser;
+use gabbro\parser\ArgvParser\ArrayOption;
+use gabbro\parser\ArgvParser\Option;
+use gabbro\parser\ArgvParser\Flag;
+use gabbro\parser\ArgvParser\Operand;
 use gabbro\io\IOStream;
 use gabbro\io\RawStream;
  
@@ -78,37 +77,31 @@ function doExit(string $msg): void {
  */
  
 $arg = new stdClass();
-$arg->Parser = new ArgV($argv);
+$arg->Parser = new ArgvParser();
 
-$arg->Parser->parseAll(
-    $arg->help = new Flag("--help", "-h"),
+$arg->Parser->addArguments(
+    $arg->help = Flag::withDescription("Display this help section.", "--help", "-h"),
     $arg->action = new Operand(0),
     $arg->target = new Operand(1),
-    $arg->archive = new Operand(2)
+    $arg->archive = new Operand(-1)
 );
 
-if ($arg->help->isSet()) {
-    $stdout->println("Usage %s Action [TARGET] ARCHIVE\n", $arg->Parser->cmd);
+if (!$arg->Parser->parse($argv) || (!$arg->action->isSet() && !$arg->help->isSet())) {
+    doExit("Invalid arguments. Use -h or --help to see all options.");
+
+} else if ($arg->help->isSet()) {
+    $arg->Parser->setUsageTitle("Usage: ".($arg->Parser->getCommand())." ls|cat [TARGET] ARCHIVE");
+    $arg->Parser->addUsageOperand("ls [DIR]", "List a specified directory or the archive.");
+    $arg->Parser->addUsageOperand("cat [FILE]", "Print the content of a specified file or the archive header. ");
     
-    $arg->Parser->addTableHeadline("Actions:");
-    $arg->Parser->addTableRow("ls [DIR]", "List a specified directory or the archive.");
-    $arg->Parser->addTableRow("cat [FILE]", "Print the content of a specified file or the archive header.");
-    
-    $stdout->println($arg->Parser->buildTable());
+    $stdout->println(
+        $arg->Parser->getUsageText()
+    );
     
     exit(0);
-    
-} else if (!$arg->Parser->isConsumed() || !$arg->action->isSet()) {
-    doExit("Invalid arguments. Use -h or --help to see all options.");
 }
 
-if (!$arg->archive->isSet() && $arg->target->isSet()) {
-    $tmp = $arg->archive;
-    $arg->archive = $arg->target;
-    $arg->target = $tmp;
-}
-
-$archive = $arg->archive->getValue("__missing__");
+$archive = $arg->archive->getValue();
 $target = $arg->target->getValue();
 
 if (!empty($target)) {
@@ -119,7 +112,7 @@ if (!empty($target)) {
     $target = trim($target, "/");
 }
 
-if (!is_file($archive)) {
+if (empty($archive) || !is_file($archive)) {
     doExit("The archive '$archive' does not exist.");
 }
 

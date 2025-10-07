@@ -19,25 +19,37 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
-
-use gabbro\collection\KeyTable;
+namespace gabbro\parser\ArgvParser;
 
 /**
- * Defines a named argv argument.
+ * Defines an arvg argument with a value. 
  */
-interface NamedArgument extends Argument {
+interface ValuedArgument extends Argument {
 
     /**
-     * Check to see if this argument has a specified name.
+     * Adds a value to this argument.
      *
-     * An argument can have multiple names. 
-     * Often this would be `-f` and `--flag` in such cases. 
+     * @param string $value
      *
-     * @param string $name      The name to check for.
-     *
-     * @return bool
+     * @return void
      */
-    function hasName(string $name): bool;
+    function addValue(string $value): void;
+    
+    /**
+     * Adds a value to this argument.
+     *
+     * @param string $default       Default value if no value is available.
+     *
+     * @return ($default is null ? string|null : string)      Returns NULL if the argument was not set.
+     */
+    function getValue(string|null $default = null): string|null;
+    
+    /**
+     * {@inheritdoc}
+     *
+     * @phpstan-assert-if-true !null $this->getValue()
+     * @phpstan-assert-if-false null $this->getValue()
+     */
+    function isSet(bool|null $state = null): bool;
 }
 

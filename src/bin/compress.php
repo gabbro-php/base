@@ -45,12 +45,11 @@ require __DIR__ . "/../SimpleLoader.php";
  */
 
 use gabbro\SimpleLoader;
-use gabbro\collection\ArrayList;
-use gabbro\collection\ArgV;
-use gabbro\collection\ArgV\ArrayOption;
-use gabbro\collection\ArgV\Option;
-use gabbro\collection\ArgV\Flag;
-use gabbro\collection\ArgV\Operand;
+use gabbro\parser\ArgvParser;
+use gabbro\parser\ArgvParser\ArrayOption;
+use gabbro\parser\ArgvParser\Option;
+use gabbro\parser\ArgvParser\Flag;
+use gabbro\parser\ArgvParser\Operand;
 use gabbro\io\IOStream;
 use gabbro\utils\Text;
  
@@ -77,9 +76,9 @@ function doExit(string $msg): void {
  */
 
 $arg = new stdClass();
-$arg->Parser = new ArgV($argv);
+$arg->Parser = new ArgvParser();
 
-$arg->Parser->parseAll(
+$arg->Parser->addArguments(
     $arg->help = Flag::withDescription(
             "Show this help section.", 
             "--help", "-h"
@@ -144,18 +143,21 @@ $arg->Parser->parseAll(
     ),
     
     $arg->source = Operand::withDescription(
-            "Source Directory",
+            "SOURCE",
             "Path to the source files for this archive. These will be added to src/ within the archive.",
-            0
+            -1
     )
 );
 
-if ($arg->help->isSet()) {
-    $stdout->println( $arg->Parser->buildHelp("Usage: compress.php [<Options>] <Source Directory>") );
-    exit(0);
-    
-} else if (!$arg->Parser->isConsumed()) {
+if (!$arg->Parser->parse($argv) || (!$arg->source->isSet() && !$arg->help->isSet())) {
     doExit("Invalid arguments. Use -h or --help to see all options.");
+
+} else if ($arg->help->isSet()) {
+    $stdout->println( 
+        $arg->Parser->getUsageText() 
+    );
+    
+    exit(0);
 }
 
 /* ==================================================
@@ -163,9 +165,9 @@ if ($arg->help->isSet()) {
  */
 
 $cfg = new stdClass();
+$cfg->source = $arg->source->getValue();
 $cfg->name = $arg->name->getValue("app.phar");
 $cfg->output = $arg->output->getValue( $cfg->name );
-$cfg->source = $arg->source->getValue();
 $cfg->vendor = $arg->vendor->toArray();
 $cfg->stub = $arg->stub->getValue();
 $cfg->webstub = $arg->webstub->getValue();
@@ -175,10 +177,11 @@ $cfg->bootstrap = $arg->bootstrap->getValue();
 $cfg->debug = $arg->debug->isSet();
 $cfg->rewrite = $arg->rewrite->isSet();
 
-if ($cfg->source === null || !is_dir($cfg->source)) {
-    doExit("Missing source directory");
-    
-} else if (!is_readable($cfg->source)) {
+if (!str_ends_with($cfg->output, ".phar")) {
+    $cfg->output .= ".phar";
+}
+
+if (empty($cfg->source) || !is_readable($cfg->source)) {
     doExit("The source directory is not readable");
     
 } else if (!is_dir( dirname($cfg->output) )) {

@@ -19,29 +19,18 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
+namespace gabbro\parser\ArgvParser;
 
 /**
- * Defines an arvg argument with a value. 
+ * Defines a positional argv argument.
  */
-interface ValuedArgument extends Argument {
+interface IndexedArgument extends Argument {
 
     /**
-     * Adds a value to this argument.
+     * Get the position of this argument.
      *
-     * @param string $value
-     *
-     * @return void
+     * @return int
      */
-    function addValue(string $value): void;
-    
-    /**
-     * Adds a value to this argument.
-     *
-     * @param string $default       Default value if no value is available.
-     *
-     * @return ($default is null ? string|null : string)      Returns NULL if the argument was not set.
-     */
-    function getValue(string|null $default = null): string|null;
+    function getPosition(): int;
 }
 

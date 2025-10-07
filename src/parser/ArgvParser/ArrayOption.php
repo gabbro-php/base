@@ -19,7 +19,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace gabbro\collection\ArgV;
+namespace gabbro\parser\ArgvParser;
 
 use gabbro\feature\Enumerable;
 use IteratorAggregate;
