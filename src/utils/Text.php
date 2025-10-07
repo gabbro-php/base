@@ -129,38 +129,48 @@ class Text {
         
         return $len;
     }
-
-    /** 
+    
+    /**
      * Wrap a block of text to a given width and apply optional left padding.
      *
-     * Uses `wordwrap()` internally to insert line breaks. Each line is then
-     * padded with the specified number of spaces. The max length will stay
-     * within padding size + line length.
+     * Paragraphs (separated by one or more blank lines) are treated as
+     * independent blocks and wrapped separately. Each block is followed
+     * by two line breaks. Uses `wordwrap()` internally.
      *
      * @param string $text      The input string to wrap.
      * @param int    $maxLen    Maximum line length before wrapping.
      * @param int    $padding   Number of spaces to add at the start of each line.
      *
-     * @return string           The wrapped and padded text.
+     * @return string         The wrapped and padded text.
      */
     public static function wrapText(string $text, int $maxLen, int $padding = 0): string {
-        $maxLen = $maxLen - $padding;
-        $wrapped = wordwrap($text, $maxLen, "\n");
-        $lines = preg_split("/\R/", $wrapped);
+        // Normalize all line endings to \n
+        $text = preg_replace("/\R/u", "\n", trim($text)) ?? $text;
+
+        // Split into blocks separated by one or more blank lines
+        $blocks = preg_split("/\n\s*\n+/", $text);
         
-        if ($lines === false) {
-            return $wrapped;
-        }
-        
-        $padStr = "";
-        
-        foreach ($lines as &$line) {
-            $line = $padStr . $line;
-            $padStr = str_repeat(" ", $padding);
+        if ($blocks === false) {
+            return $text;
         }
 
-        return implode("\n", $lines);
+        $pad = str_repeat(" ", $padding);
+        $maxLen = max(1, $maxLen - $padding);
+        $result = [];
+
+        foreach ($blocks as $block) {
+            $wrapped = wordwrap(trim($block), $maxLen, "\n");
+            $lines = explode("\n", $wrapped);
+
+            foreach ($lines as &$line) {
+                $line = $pad . $line;
+            }
+
+            $result[] = implode("\n", $lines);
+        }
+
+        // Join blocks with two normalized line breaks
+        return implode("\n\n", $result);
     }
-    
 }
     
